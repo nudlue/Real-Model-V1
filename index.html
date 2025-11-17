@@ -42,4 +42,57 @@
 </head>
 
 <body>
-  <h1>🔊
+  <h1>🔊 Sound Classifier</h1>
+  <button onclick="startListening()">🎤 Start Listening</button>
+
+  <div id="label">대기 중...</div>
+  <div id="emoji">🙂</div>
+
+  <script>
+    let recognizer;
+
+    async function createModel() {
+      recognizer = speechCommands.create(
+        "BROWSER_FFT", 
+        undefined,
+        "model.json",
+        "metadata.json"
+      );
+      await recognizer.ensureModelLoaded();
+      return recognizer;
+    }
+
+    async function startListening() {
+      document.getElementById("label").innerText = "🎧 모델 로딩 중...";
+      const recognizer = await createModel();
+
+      const labels = recognizer.wordLabels();
+      document.getElementById("label").innerText = "Listening... (마이크 허용 필요)";
+
+      recognizer.listen(result => {
+        const scores = result.scores;
+        const maxIndex = scores.indexOf(Math.max(...scores));
+        const label = labels[maxIndex];
+
+        document.getElementById("label").innerText = "결과: " + label;
+
+        let emoji = "🙂";
+        if (label === "Baby Crying") emoji = "👶😢";
+        else if (label === "Doorbell") emoji = "🔔😊";
+        else if (label === "Fire Alarm") emoji = "🔥😨";
+        else if (label === "배경 소음") emoji = "🌫️😐";
+
+        document.getElementById("emoji").innerText = emoji;
+
+      }, {
+        overlapFactor: 0.5,
+        probabilityThreshold: 0.75
+      });
+
+      setTimeout(() => recognizer.stopListening(), 30000);
+    }
+  </script>
+</body>
+</html>
+
+
